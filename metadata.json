@@ -1,0 +1,6 @@
+{
+  "name": "Wedding Invitation Template",
+  "description": "Premium interactive wedding invitation template architecture and tooling.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
