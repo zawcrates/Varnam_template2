@@ -15,7 +15,7 @@ import { Divider } from './Divider';
 const heroTypography = {
   mobile: {
     top: '5vh',
-    offset: '870px',
+    offset: '520px',
     sectionGap: '0.85rem',
     headingSize: '0.58rem',
     headingSpacing: '0.14em',

@@ -79,7 +79,7 @@ const backgroundConfig = {
 // - width: the responsive width of the image.
 const stageConfig = {
   mobile: {
-    bottom: "-600px",
+    bottom: "-300px",
     width: "110%",
   },
   tablet: {
