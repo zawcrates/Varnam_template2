@@ -19,8 +19,8 @@ export { invitationData } from '@/data/invitationData';
 const topNamesConfig = {
   mobile: {
     top: '12vh',
-    nameSize: '1.8rem',
-    andSize: '0.8rem',
+    nameSize: '1.4rem',
+    andSize: '0.65rem',
     spacing: '0.08em',
     gap: '0.15rem',
   },
@@ -79,7 +79,7 @@ const backgroundConfig = {
 // - width: the responsive width of the image.
 const stageConfig = {
   mobile: {
-    bottom: "-800px",
+    bottom: "-600px",
     width: "110%",
   },
   tablet: {
@@ -91,7 +91,7 @@ const stageConfig = {
     width: "100%",
   },
   xl: {
-    bottom: "-3700px",
+    bottom: "-4450px",
     width: "100%",
   },
 };
@@ -107,10 +107,11 @@ export default function App() {
     const bgEl = backgroundRef.current;
     if (!bgEl) return;
 
-    // Create hardware-accelerated parallax translation (moving 30% slower than scroll rate)
+    // Create fixed-position parallax translation (moving 30% slower than scroll rate)
+    // Using a negative translation on a fixed container prevents stretching the document height
     const ctx = gsap.context(() => {
       gsap.to(bgEl, {
-        y: () => ScrollTrigger.maxScroll(window) * 0.3,
+        y: () => -ScrollTrigger.maxScroll(window) * 0.7,
         ease: 'none',
         scrollTrigger: {
           trigger: document.body,
@@ -163,13 +164,13 @@ export default function App() {
         {/* Parallax Sunset Background Layer (Moving 30% slower than scroll) */}
         <div 
           ref={backgroundRef}
-          className="absolute top-0 left-0 w-full pointer-events-none z-0"
+          className="fixed top-0 left-0 w-full pointer-events-none z-0"
           style={{
             backgroundImage: "url('/images/Sunset.png')",
             backgroundRepeat: 'no-repeat',
             backgroundSize: currentConfig.backgroundSize,
             backgroundPosition: `${currentConfig.backgroundPositionX} ${currentConfig.backgroundPositionY}`,
-            height: '100%',
+            height: '100vh',
             willChange: 'transform',
           }}
         />
