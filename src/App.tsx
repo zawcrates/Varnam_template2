@@ -11,11 +11,10 @@ import { invitationData } from '@/data/invitationData';
 
 gsap.registerPlugin(ScrollTrigger);
 
-
 // Export invitationData so it can be managed and edited easily from App.tsx
 export { invitationData } from '@/data/invitationData';
 
-// Centralized configuration for the Top Couple Names display at the beginning of the page
+// ─── Top Couple Names Config ────────────────────────────────────────────────
 const topNamesConfig = {
   mobile: {
     top: '12vh',
@@ -47,10 +46,7 @@ const topNamesConfig = {
   },
 };
 
-// Centralized responsive configuration for the background image.
-// You can easily adjust the y (vertical position), x (horizontal position), and size for each breakpoint.
-// - Use '100% auto' or 'contain' for mobile to display the image with its natural proportions.
-// - Use negative values for y (e.g., '-50px') to shift the image upwards on desktop layouts.
+// ─── Background Image Config ─────────────────────────────────────────────────
 const backgroundConfig = {
   mobile: {
     backgroundSize: '100% auto',
@@ -74,28 +70,28 @@ const backgroundConfig = {
   },
 };
 
-// Centralized responsive configuration for the stage image layer.
-// - bottom: vertical position anchored to the bottom (negative values move it down/overlay, positive values move it up).
-// - width: the responsive width of the image.
+// ─── Stage Image Config ───────────────────────────────────────────────────────
+// bottom: negative values move the stage down past the hero boundary (into spacer zone)
 const stageConfig = {
   mobile: {
-    bottom: "-300px",
-    width: "110%",
+    bottom: '-300px',
+    width: '110%',
   },
   tablet: {
-    bottom: "-1700px",
-    width: "105%",
+    bottom: '-1700px',
+    width: '105%',
   },
   desktop: {
-    bottom: "-3700px",
-    width: "100%",
+    bottom: '-3700px',
+    width: '100%',
   },
   xl: {
-    bottom: "-4450px",
-    width: "100%",
+    bottom: '-4450px',
+    width: '100%',
   },
 };
 
+// ─── App Component ────────────────────────────────────────────────────────────
 export default function App() {
   const activeBreakpoint = useActiveBreakpoint();
   const backgroundRef = useRef<HTMLDivElement>(null);
@@ -103,17 +99,24 @@ export default function App() {
   const currentConfig = backgroundConfig[activeBreakpoint];
   const currentStageConfig = stageConfig[activeBreakpoint];
 
+  const isDesktop = activeBreakpoint === 'desktop' || activeBreakpoint === 'xl';
+  const isMobile = activeBreakpoint === 'mobile';
+
   useEffect(() => {
     const bgEl = backgroundRef.current;
     if (!bgEl) return;
 
-    const isDesktopLayout = activeBreakpoint === 'desktop' || activeBreakpoint === 'xl';
+    // Desktop: background is absolutely positioned and fully static — no movement.
+    // Mobile/Tablet: gentle upward parallax so the sunset drifts slower than content.
+    if (isDesktop) {
+      gsap.killTweensOf(bgEl);
+      gsap.set(bgEl, { clearProps: 'transform' });
+      return;
+    }
 
-    // Create fixed-position parallax translation (moving 30% slower than scroll rate)
-    // For desktop/xl, the background is kept completely static at top: 0 (y = 0) as requested.
     const ctx = gsap.context(() => {
       gsap.to(bgEl, {
-        y: () => isDesktopLayout ? 0 : -ScrollTrigger.maxScroll(window) * 0.7,
+        y: () => -ScrollTrigger.maxScroll(window) * 0.5,
         ease: 'none',
         scrollTrigger: {
           trigger: document.body,
@@ -121,21 +124,17 @@ export default function App() {
           end: 'bottom bottom',
           scrub: true,
           invalidateOnRefresh: true,
-        }
+        },
       });
     });
 
     return () => ctx.revert();
-  }, [activeBreakpoint]);
+  }, [activeBreakpoint, isDesktop]);
 
-  // Inline styling applying the responsive configuration directly to the canvas wrapper
-  const backgroundStyle = {
-    backgroundColor: '#030303',
-    width: '100vw',
-    minHeight: '100vh',
-  };
+  // Background layer height — desktop locks to viewport; mobile/tablet taller for parallax
+  const bgHeight = isDesktop ? '100vh' : isMobile ? '160vh' : '140vh';
 
-  // Dynamically computed style for the stage image layer using the exact bottom positioning
+  // Stage anchored absolutely to bottom of hero section
   const stageStyle = {
     position: 'absolute' as const,
     bottom: currentStageConfig.bottom,
@@ -145,48 +144,42 @@ export default function App() {
     transform: 'translateX(-50%)',
   };
 
-  // Dynamically calculate the scrollable spacer height so that the stage image is never cut off
-  // even with deep negative 'bottom' offsets.
+  // Spacer below hero to make room for the stage overlay before next section
   const bottomOffsetPx = Math.abs(parseInt(currentStageConfig.bottom, 10) || 0);
-  const spacerStyle = {
-    width: '100%',
-    height: `${bottomOffsetPx}px`,
-    backgroundColor: 'transparent',
-  };
 
   const currentTopConfig = topNamesConfig[activeBreakpoint] || topNamesConfig.desktop;
   const { groomName, brideName } = invitationData.hero;
 
   return (
     <LenisProvider enabled={true}>
-      <div 
-        className="relative overflow-x-hidden w-full m-0 p-0" 
-        style={backgroundStyle}
+      <div
+        className="w-full m-0 p-0 overflow-x-hidden"
+        style={{ backgroundColor: '#030303' }}
       >
-        {/* Parallax Sunset Background Layer (Moving 30% slower than scroll) */}
-        <div 
-          ref={backgroundRef}
-          className="fixed top-0 left-0 w-full pointer-events-none z-0"
-          style={{
-            backgroundImage: "url('/images/Sunset.png')",
-            backgroundRepeat: 'no-repeat',
-            backgroundSize: currentConfig.backgroundSize,
-            backgroundPosition: `${currentConfig.backgroundPositionX} ${currentConfig.backgroundPositionY}`,
-            height: '100vh',
-            willChange: 'transform',
-          }}
-        />
-
-        {/* Floating Lanterns Cinematic Layer */}
-        <LanternEngine />
-        {/* Hero Section (100vh) which anchors the stage image at its bottom boundary with overflow visible */}
+        {/* ── Hero Section: 100vh with sunset background, names, stage ── */}
         <div className="relative w-full h-screen overflow-visible">
-          {/* Top Couple Names at the absolute beginning of the page */}
+
+          {/* Sunset background — ABSOLUTE inside hero only. Does NOT bleed into other sections. */}
+          <div
+            ref={backgroundRef}
+            className="absolute top-0 left-0 w-full pointer-events-none z-0"
+            style={{
+              backgroundImage: "url('/images/Sunset.png')",
+              backgroundRepeat: 'no-repeat',
+              backgroundSize: currentConfig.backgroundSize,
+              backgroundPosition: `${currentConfig.backgroundPositionX} ${currentConfig.backgroundPositionY}`,
+              height: bgHeight,
+              willChange: 'transform',
+            }}
+          />
+
+          {/* Floating Lanterns — cinematic layer over background */}
+          <LanternEngine />
+
+          {/* Top couple names — overlaid at the top of the hero */}
           <motion.div
             className="absolute left-1/2 -translate-x-1/2 w-[calc(100%-48px)] max-w-6xl text-center select-none z-20 pointer-events-none"
-            style={{
-              top: currentTopConfig.top,
-            }}
+            style={{ top: currentTopConfig.top }}
             initial={{ opacity: 0, y: 30 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 1.4, ease: [0.16, 1, 0.3, 1] }}
@@ -203,14 +196,14 @@ export default function App() {
             />
           </motion.div>
 
-          {/* Beautiful Custom Font Typography overlay */}
+          {/* Hero Typography details placard */}
           <HeroTypography />
 
-          {/* Responsive Stage Image Container */}
+          {/* Stage image anchored to bottom of hero */}
           <div style={stageStyle}>
-            <img 
-              src="/images/stage.png" 
-              alt="Stage Backdrop" 
+            <img
+              src="/images/stage.png"
+              alt="Stage Backdrop"
               className="w-full h-auto object-contain block"
               referrerPolicy="no-referrer"
             />
@@ -218,19 +211,21 @@ export default function App() {
 
         </div>
 
-        {/* Scrollable boundary allowing the user to scroll vertically through the layout */}
-        <div style={spacerStyle} />
+        {/* Spacer — creates scroll room for the overflowing stage image */}
+        <div
+          style={{
+            width: '100%',
+            height: `${bottomOffsetPx}px`,
+            backgroundColor: 'transparent',
+          }}
+        />
 
-        {/* New Events Section immediately after the Hero and stage spacing */}
+        {/* ── Content Sections — solid dark bg, fully isolated from sunset ── */}
         <EventsSection />
-
-        {/* Enroute Section immediately after the Events Section */}
         <EnrouteSection />
-
-        {/* Banner Section immediately after the Enroute Section */}
         <BannerSection />
+
       </div>
     </LenisProvider>
   );
 }
-
