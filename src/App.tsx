@@ -107,11 +107,13 @@ export default function App() {
     const bgEl = backgroundRef.current;
     if (!bgEl) return;
 
+    const isDesktopLayout = activeBreakpoint === 'desktop' || activeBreakpoint === 'xl';
+
     // Create fixed-position parallax translation (moving 30% slower than scroll rate)
-    // Using a negative translation on a fixed container prevents stretching the document height
+    // For desktop/xl, the background is kept completely static at top: 0 (y = 0) as requested.
     const ctx = gsap.context(() => {
       gsap.to(bgEl, {
-        y: () => -ScrollTrigger.maxScroll(window) * 0.7,
+        y: () => isDesktopLayout ? 0 : -ScrollTrigger.maxScroll(window) * 0.7,
         ease: 'none',
         scrollTrigger: {
           trigger: document.body,
@@ -124,7 +126,7 @@ export default function App() {
     });
 
     return () => ctx.revert();
-  }, []);
+  }, [activeBreakpoint]);
 
   // Inline styling applying the responsive configuration directly to the canvas wrapper
   const backgroundStyle = {
